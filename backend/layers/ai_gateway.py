@@ -11,7 +11,7 @@ OPENAI_URL = "https://api.openai.com/v1/chat/completions"
 OPENAI_MODEL = "gpt-4o"
 
 
-async def _call_anthropic(messages: list[dict[str, Any]], api_key: str, max_tokens: int = 1000) -> str:
+async def _call_anthropic(messages: list[dict[str, Any]], api_key: str, max_tokens: int = 1000, system_prompt: str | None = None) -> str:
     headers = {
         "x-api-key": api_key,
         "anthropic-version": "2023-06-01",
@@ -22,13 +22,15 @@ async def _call_anthropic(messages: list[dict[str, Any]], api_key: str, max_toke
         "max_tokens": max_tokens,
         "messages": messages,
     }
+    if system_prompt:
+        body["system"] = system_prompt
     async with httpx.AsyncClient(timeout=45) as client:
         response = await client.post(ANTHROPIC_URL, headers=headers, json=body)
         response.raise_for_status()
         return response.json()["content"][0]["text"]
 
 
-async def _call_openai(messages: list[dict[str, Any]], api_key: str, max_tokens: int = 1000) -> str:
+async def _call_openai(messages: list[dict[str, Any]], api_key: str, max_tokens: int = 1000, system_prompt: str | None = None) -> str:
     converted_messages: list[dict[str, Any]] = []
     for message in messages:
         content = message["content"]
@@ -53,6 +55,9 @@ async def _call_openai(messages: list[dict[str, Any]], api_key: str, max_tokens:
 
         converted_messages.append({"role": message["role"], "content": converted_content})
 
+    if system_prompt:
+        converted_messages.insert(0, {"role": "system", "content": system_prompt})
+
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
@@ -68,7 +73,7 @@ async def _call_openai(messages: list[dict[str, Any]], api_key: str, max_tokens:
         return response.json()["choices"][0]["message"]["content"]
 
 
-async def call_ai(messages: list[dict[str, Any]], provider: str, api_key: str, max_tokens: int = 1000) -> str:
+async def call_ai(messages: list[dict[str, Any]], provider: str, api_key: str, max_tokens: int = 1000, system_prompt: str | None = None) -> str:
     if provider == "openai":
-        return await _call_openai(messages, api_key, max_tokens=max_tokens)
-    return await _call_anthropic(messages, api_key, max_tokens=max_tokens)
+        return await _call_openai(messages, api_key, max_tokens=max_tokens, system_prompt=system_prompt)
+    return await _call_anthropic(messages, api_key, max_tokens=max_tokens, system_prompt=system_prompt)
