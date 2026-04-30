@@ -44,7 +44,7 @@ export default function App() {
 
   const status = useMemo(() => ({ apiUrl: API_URL }), []);
 
-async function callAnalyze(payload) {
+  async function callAnalyze(payload) {
     let res;
     try {
       res = await fetch(`${API_URL}/analyze`, {
@@ -63,8 +63,33 @@ async function callAnalyze(payload) {
     return body;
   }
 
+  async function ensureBackendAvailable() {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    try {
+      const res = await fetch(`${API_URL}/health`, {
+        method: "GET",
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        throw new Error();
+      }
+    } catch (_error) {
+      throw new Error(`Backend is unreachable at ${API_URL}. Start the API server and try again.`);
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
   async function runAnalysis(formData, imageFile) {
     setError(null);
+    try {
+      await ensureBackendAvailable();
+    } catch (err) {
+      setError(err.message || "Backend is unreachable");
+      setView("input");
+      return;
+    }
     setView("processing");
     setCurrentStage(0);
 
@@ -113,6 +138,13 @@ async function callAnalyze(payload) {
 
   async function runDemo(provider, scenario) {
     setError(null);
+    try {
+      await ensureBackendAvailable();
+    } catch (err) {
+      setError(err.message || "Backend is unreachable");
+      setView("input");
+      return;
+    }
     setView("processing");
     setCurrentStage(0);
 
