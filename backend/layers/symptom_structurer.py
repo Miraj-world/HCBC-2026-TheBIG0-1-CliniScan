@@ -52,8 +52,15 @@ DEFAULT_STRUCTURED_OUTPUT = {
 }
 
 
+def _render_structurer_prompt(form_data: dict[str, Any]) -> str:
+    prompt = STRUCTURER_PROMPT
+    for key, value in form_data.items():
+        prompt = prompt.replace("{" + key + "}", str(value))
+    return prompt
+
+
 async def structure_symptoms(form_data: dict[str, Any], provider: str, api_key: str) -> dict:
-    prompt = STRUCTURER_PROMPT.format(**form_data)
+    prompt = _render_structurer_prompt(form_data)
     raw = await call_ai(
         messages=[{"role": "user", "content": prompt}],
         provider=provider,

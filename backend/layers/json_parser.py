@@ -38,38 +38,70 @@ def normalize_confidence_level(value: Any) -> str:
         return "Medium"
 
     text = str(value or "").strip().lower()
-    if re.search(r"\bhigh|strong|likely|probable\b", text):
+    if re.search(r"\b(high|strong|likely|probable)\b", text):
         return "High"
-    if re.search(r"\blow|unlikely|weak|doubtful\b", text):
+    if re.search(r"\b(low|unlikely|weak|doubtful)\b", text):
         return "Low"
     return "Medium"
 
 
+def _string_items(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        items: list[str] = []
+        for item in value:
+            if isinstance(item, dict):
+                text = item.get("condition") or item.get("name") or item.get("title") or item.get("diagnosis")
+                if text:
+                    items.append(str(text).strip())
+            else:
+                text = str(item).strip()
+                if text:
+                    items.append(text)
+        return items
+    if isinstance(value, str):
+        text = value.strip()
+        if not text or text.lower() in {"none", "n/a", "not applicable"}:
+            return []
+        parts = re.split(r"(?:\n+|;\s*|\s*\d+\.\s*)", text)
+        return [part.strip(" -") for part in parts if part.strip(" -")]
+    return []
+
+
+def _reasoning_items(value: Any) -> list[str]:
+    items = _string_items(value)
+    if len(items) == 1:
+        sentences = re.split(r"(?<=[.!?])\s+", items[0])
+        items = [sentence.strip() for sentence in sentences if sentence.strip()]
+    return items[:3]
+
+
 def normalize_diagnosis_output(data: dict[str, Any]) -> dict[str, Any]:
     out = dict(data)
-    conditions = out.get("possible_conditions") or []
-    if not isinstance(conditions, list):
-        conditions = []
-    out["possible_conditions"] = [str(item) for item in conditions if str(item).strip()]
+    raw_conditions = out.get("possible_conditions") or out.get("conditions") or out.get("differential_diagnosis")
+    out["possible_conditions"] = _string_items(raw_conditions)
 
-    levels = out.get("confidence_levels") or []
+    levels = out.get("confidence_levels") or out.get("confidence") or []
+    if not levels and isinstance(raw_conditions, list):
+        levels = [
+            item.get("confidence") or item.get("confidence_level")
+            for item in raw_conditions
+            if isinstance(item, dict)
+        ]
+    if isinstance(levels, dict):
+        levels = list(levels.values())
     if not isinstance(levels, list):
-        levels = []
+        levels = [levels]
     normalized_levels = [normalize_confidence_level(item) for item in levels]
     normalized_levels = normalized_levels[: len(out["possible_conditions"])]
     while len(normalized_levels) < len(out["possible_conditions"]):
         normalized_levels.append("Medium")
     out["confidence_levels"] = normalized_levels
 
-    reasoning = out.get("clinical_reasoning") or []
-    if not isinstance(reasoning, list):
-        reasoning = []
-    out["clinical_reasoning"] = [str(item) for item in reasoning if str(item).strip()][:3]
+    out["clinical_reasoning"] = _reasoning_items(out.get("clinical_reasoning") or out.get("reasoning"))
 
-    red_flags = out.get("red_flags") or []
-    if not isinstance(red_flags, list):
-        red_flags = []
-    out["red_flags"] = [str(item) for item in red_flags if str(item).strip()]
+    out["red_flags"] = _string_items(out.get("red_flags"))
 
     out["recommendation"] = str(out.get("recommendation") or "Seek medical evaluation if symptoms persist or worsen.")
     out["disclaimer"] = STANDARD_DISCLAIMER

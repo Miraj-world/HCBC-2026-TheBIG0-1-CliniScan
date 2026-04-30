@@ -98,3 +98,82 @@ def test_text_only_analysis_path_with_mocked_layers(monkeypatch):
     assert body["no_image_mode"] is True
     assert body["demo_mode"] is False
     assert body["pipeline_stages"]["vision_output"] == {}
+
+
+def test_image_conflict_path_returns_clinical_sections(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+
+    async def fake_structure(form_data, provider, api_key):
+        return {
+            "primary_symptom": "rash",
+            "body_location": form_data["body_location"],
+            "body_region": "skin",
+            "duration_days": form_data["duration_days"],
+            "severity_score": 2,
+            "progression": "worsening",
+            "associated_symptoms": ["itching"],
+            "patient_reported_severity": "low",
+            "risk_factors": [],
+            "text_completeness": 0.9,
+        }
+
+    async def fake_vision(image_base64, image_mime, provider, api_key):
+        return {
+            "medical_relevance": True,
+            "visual_features": {"primary_color": "red", "border_definition": "irregular"},
+            "severity_indicators": {
+                "open_wound": False,
+                "bleeding": False,
+                "swelling": True,
+                "spreading": True,
+                "discoloration": True,
+                "discharge": False,
+            },
+            "visual_severity": "high",
+            "confidence": "high",
+            "detected_signs": ["Diffuse redness", "Visible spreading pattern"],
+        }
+
+    async def fake_reasoning(fusion_output, quality_output, provider, api_key):
+        return {
+            "possible_conditions": ["Cellulitis", "Contact dermatitis", "Insect bite reaction"],
+            "confidence_levels": ["Medium", "Low", "Low"],
+            "clinical_reasoning": [
+                "Visual evidence shows spreading redness and swelling.",
+                "The patient reports a low-severity rash with itching.",
+                "The mismatch pattern supports prompt clinical review.",
+            ],
+            "red_flags": ["Spreading redness", "Worsening symptoms"],
+            "recommendation": "Seek medical attention promptly for an in-person assessment.",
+            "disclaimer": "Not a diagnosis. Always consult a licensed medical professional.",
+        }
+
+    monkeypatch.setattr(main, "structure_symptoms", fake_structure)
+    monkeypatch.setattr(main, "extract_vision_features", fake_vision)
+    monkeypatch.setattr(main, "generate_clinical_reasoning", fake_reasoning)
+
+    response = client.post(
+        "/analyze",
+        json={
+            "symptom_text": "My rash is itchy and seems bigger today",
+            "body_location": "forearm",
+            "duration_days": 3,
+            "severity_score": 2,
+            "provider": "openai",
+            "image_base64": "ZmFrZS1pbWFnZQ==",
+            "image_mime": "image/jpeg",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["no_image_mode"] is False
+    assert body["conflict"]["conflict_detected"] is True
+    assert body["diagnosis"]["possible_conditions"] == [
+        "Cellulitis",
+        "Contact dermatitis",
+        "Insect bite reaction",
+    ]
+    assert len(body["diagnosis"]["clinical_reasoning"]) == 3
+    assert body["diagnosis"]["red_flags"] == ["Spreading redness", "Worsening symptoms"]
+    assert "Clinical reasoning model response was unavailable or invalid" not in body["risk_signals"]
