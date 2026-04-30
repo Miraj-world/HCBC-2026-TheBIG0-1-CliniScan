@@ -1,61 +1,61 @@
-# 🚀 HCBC Hackathon 2026
+# CliniScan v2
 
-Welcome to the **HCBC Hackathon 2026** — a 24-hour innovation challenge focused on building impactful solutions for a smarter future.
+CliniScan is a rule-augmented multimodal triage assistant that fuses structured symptom intake and visual evidence.
 
-🌐 Theme: **AI for a Smarter Tomorrow**  
-📅 Dates: **April 30 – May 1, 2026**  
-📍 Format: Hybrid (Online + In-Person Finals)
+## What It Is
+- A layered triage prioritization workflow with deterministic risk fusion.
+- Explainable pipeline output for demo and educational use.
 
----
+## What It Is Not
+- Not a diagnosis tool.
+- Not a replacement for licensed medical consultation.
+- Not a clinically validated medical device.
 
-## 🧠 About the Hackathon
+Every result includes: `Not a diagnosis. Always consult a licensed medical professional.`
 
-HCBC Hackathon 2026 is designed to bring together developers, designers, and innovators to build creative solutions in a fast-paced environment.
+## Architecture
+- `backend/`
+  - FastAPI orchestration (`/analyze`, `/health`)
+  - Layered modules:
+    - Layer 0: Safety override
+    - Layer 1A: Vision extractor (LLM)
+    - Layer 1B: Symptom structurer (LLM)
+    - Layer 2: Evidence fusion (deterministic)
+    - Layer 3: Quality gate (deterministic)
+    - Layer 4: Clinical reasoning (LLM)
+  - Demo cache scenarios in `backend/cache/`
+- `frontend/`
+  - React + Vite SPA with 3-view state machine:
+    - Input
+    - Processing pipeline
+    - Results
 
-You can:
+## API Contract
+`POST /analyze` expects JSON:
+- `symptom_text`, `body_location`, `duration_days`, `severity_score`
+- optional: `age`, `known_conditions`, `medications`
+- optional image: `image_base64`, `image_mime`
+- optional demo: `demo_scenario` (`1|2|3`)
+- `provider`: `anthropic` or `openai`
 
-- Build AI-based solutions 🤖
-- Work on any innovative idea 💡
-- Collaborate in teams (up to 4 members)
+Returns:
+- `pipeline_stages`, `diagnosis`, `urgency`, `conflict`, `risk_signals`, `quality`, `no_image_mode`, `demo_mode`
 
----
+## Local Setup
+### Backend
+```bash
+cd backend
+pip install -r requirements.txt
+copy .env.example .env
+uvicorn main:app --reload --port 8000
+```
 
-## ⚡ Getting Started
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-All teams **must create their repository from this template**.
-
-👉 Click: Use this template → Create a new repository
-
----
-
-## 📁 Required Repository Structure
-
-Each team repository should include:
-
-- /demo → Demo video or screenshots
-- /docs → Documentation (optional)
-- /src → Source code
-- README.md → Project details
-
-## ⏰ Timeline
-
-- Day 1 (April 30)
-  - 10:00 AM → Coding begins
-  - 4:00–5:00 PM → Mentor session
-- Day 2 (May 1)
-  - 2:00 PM → 🚨 Coding Freeze / Submission Deadline
-  - 2:00–5:00 PM → Final presentations (In-person)
-
-## 🚨 Submission Rules
-
-- All work must be done during the hackathon
-- Use of open-source tools/libraries is allowed
-- Pre-built templates are allowed, but NOT pre-built solutions
-- Teams must have maximum 4 members
-- Repository must be public
-
-# ⚠️ Important Notes
-
-- ⛔ Commits after 10:00 AM (May 1) may not be considered
-- 📢 Make sure your repo is complete before the deadline
-- 🧾 Missing README or demo = lower evaluation score
+Frontend default URL: `http://localhost:3000`
+Backend default URL: `http://localhost:8000`

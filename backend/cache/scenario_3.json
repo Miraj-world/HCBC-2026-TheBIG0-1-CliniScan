@@ -1,0 +1,118 @@
+{
+  "pipeline_stages": {
+    "safety_override": {
+      "override_triggered": false,
+      "triggered_by": [],
+      "forced_urgency": null
+    },
+    "vision_output": {
+      "medical_relevance": true,
+      "visual_features": {
+        "primary_color": "red",
+        "texture": "watery",
+        "shape": "diffuse conjunctival area",
+        "spread_pattern": "entire scleral surface",
+        "border_definition": "diffuse"
+      },
+      "severity_indicators": {
+        "open_wound": false,
+        "bleeding": false,
+        "swelling": true,
+        "spreading": true,
+        "discoloration": true,
+        "discharge": true
+      },
+      "visual_severity": "high",
+      "confidence": "high",
+      "detected_signs": [
+        "Diffuse conjunctival redness",
+        "Visible discharge near lower eyelid"
+      ]
+    },
+    "symptom_output": {
+      "primary_symptom": "red watery eye",
+      "body_location": "left eye",
+      "body_region": "eye",
+      "duration_days": 2,
+      "severity_score": 6,
+      "progression": "worsening",
+      "associated_symptoms": [
+        "discharge",
+        "light sensitivity"
+      ],
+      "patient_reported_severity": "medium",
+      "risk_factors": [],
+      "text_completeness": 0.88
+    },
+    "fusion_output": {
+      "vision_score": 20.3,
+      "text_score": 5.0,
+      "total_risk_score": 27.3,
+      "urgency": "high",
+      "conflict": {
+        "conflict_detected": true,
+        "conflict_type": "underreporting_possible",
+        "text_severity": "medium",
+        "vision_severity": "high",
+        "visual_dominates": false
+      },
+      "risk_signals": [
+        "Spreading pattern detected visually",
+        "Discharge observed in image",
+        "Patient reports condition is worsening over time",
+        "Visual evidence indicates higher severity than patient description suggests"
+      ],
+      "body_region": "eye",
+      "no_image_mode": false
+    },
+    "quality_output": {
+      "quality_score": 0.94,
+      "quality_level": "high",
+      "show_uncertain_badge": false
+    }
+  },
+  "diagnosis": {
+    "possible_conditions": [
+      "Acute conjunctivitis",
+      "Bacterial eye infection",
+      "Corneal irritation"
+    ],
+    "confidence_levels": [
+      "High",
+      "Medium",
+      "Low"
+    ],
+    "clinical_reasoning": [
+      "Visual evidence shows diffuse redness with discharge and swelling around the eye.",
+      "Patient-reported light sensitivity and worsening trajectory increase concern.",
+      "Conflict between medium self-reported severity and high visual severity supports urgent triage."
+    ],
+    "red_flags": [
+      "Eye pain or light sensitivity",
+      "Visible discharge with rapid worsening"
+    ],
+    "recommendation": "Seek urgent same-day medical evaluation for eye symptoms.",
+    "disclaimer": "Not a diagnosis. Always consult a licensed medical professional."
+  },
+  "urgency": "high",
+  "conflict": {
+    "conflict_detected": true,
+    "conflict_type": "underreporting_possible",
+    "text_severity": "medium",
+    "vision_severity": "high",
+    "visual_dominates": false
+  },
+  "risk_signals": [
+    "Spreading pattern detected visually",
+    "Discharge observed in image",
+    "Patient reports condition is worsening over time",
+    "Visual evidence indicates higher severity than patient description suggests"
+  ],
+  "quality": {
+    "quality_score": 0.94,
+    "quality_level": "high",
+    "show_uncertain_badge": false
+  },
+  "no_image_mode": false,
+  "demo_mode": true
+}

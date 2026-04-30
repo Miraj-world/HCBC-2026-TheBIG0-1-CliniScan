@@ -1,0 +1,108 @@
+{
+  "pipeline_stages": {
+    "safety_override": {
+      "override_triggered": false,
+      "triggered_by": [],
+      "forced_urgency": null
+    },
+    "vision_output": {
+      "medical_relevance": true,
+      "visual_features": {
+        "primary_color": "red",
+        "texture": "patchy",
+        "shape": "circular",
+        "spread_pattern": "mild outward spread",
+        "border_definition": "defined"
+      },
+      "severity_indicators": {
+        "open_wound": false,
+        "bleeding": false,
+        "swelling": false,
+        "spreading": true,
+        "discoloration": true,
+        "discharge": false
+      },
+      "visual_severity": "medium",
+      "confidence": "high",
+      "detected_signs": [
+        "Circular erythematous patch with defined edge",
+        "Mild outward expansion pattern"
+      ]
+    },
+    "symptom_output": {
+      "primary_symptom": "itchy rash",
+      "body_location": "right forearm",
+      "body_region": "skin",
+      "duration_days": 3,
+      "severity_score": 4,
+      "progression": "stable",
+      "associated_symptoms": [
+        "mild fever"
+      ],
+      "patient_reported_severity": "medium",
+      "risk_factors": [],
+      "text_completeness": 0.85
+    },
+    "fusion_output": {
+      "vision_score": 11.0,
+      "text_score": 2.0,
+      "total_risk_score": 13.0,
+      "urgency": "medium",
+      "conflict": {
+        "conflict_detected": false,
+        "conflict_type": null,
+        "text_severity": "medium",
+        "vision_severity": "medium",
+        "visual_dominates": false
+      },
+      "risk_signals": [
+        "Spreading pattern detected visually"
+      ],
+      "body_region": "skin",
+      "no_image_mode": false
+    },
+    "quality_output": {
+      "quality_score": 0.93,
+      "quality_level": "high",
+      "show_uncertain_badge": false
+    }
+  },
+  "diagnosis": {
+    "possible_conditions": [
+      "Contact dermatitis",
+      "Tinea corporis",
+      "Nummular eczema"
+    ],
+    "confidence_levels": [
+      "Medium",
+      "Medium",
+      "Low"
+    ],
+    "clinical_reasoning": [
+      "Visual evidence shows a circular erythematous lesion with mild spread.",
+      "Patient-reported itch and duration are compatible with superficial inflammatory dermatoses.",
+      "Overall risk is moderate based on combined visual and symptom scoring."
+    ],
+    "red_flags": [],
+    "recommendation": "Schedule a primary care or dermatology visit if symptoms continue to spread.",
+    "disclaimer": "Not a diagnosis. Always consult a licensed medical professional."
+  },
+  "urgency": "medium",
+  "conflict": {
+    "conflict_detected": false,
+    "conflict_type": null,
+    "text_severity": "medium",
+    "vision_severity": "medium",
+    "visual_dominates": false
+  },
+  "risk_signals": [
+    "Spreading pattern detected visually"
+  ],
+  "quality": {
+    "quality_score": 0.93,
+    "quality_level": "high",
+    "show_uncertain_badge": false
+  },
+  "no_image_mode": false,
+  "demo_mode": true
+}

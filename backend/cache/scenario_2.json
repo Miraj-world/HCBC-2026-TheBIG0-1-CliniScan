@@ -1,0 +1,104 @@
+{
+  "pipeline_stages": {
+    "safety_override": {
+      "override_triggered": false,
+      "triggered_by": [],
+      "forced_urgency": null
+    },
+    "vision_output": {
+      "medical_relevance": true,
+      "visual_features": {
+        "primary_color": "pink",
+        "texture": "blistered",
+        "shape": "small localized",
+        "spread_pattern": "none",
+        "border_definition": "defined"
+      },
+      "severity_indicators": {
+        "open_wound": false,
+        "bleeding": false,
+        "swelling": true,
+        "spreading": false,
+        "discoloration": false,
+        "discharge": false
+      },
+      "visual_severity": "low",
+      "confidence": "high",
+      "detected_signs": [
+        "Small blister over fingertip",
+        "No active bleeding or spread"
+      ]
+    },
+    "symptom_output": {
+      "primary_symptom": "burn on finger",
+      "body_location": "left index finger",
+      "body_region": "skin",
+      "duration_days": 1,
+      "severity_score": 3,
+      "progression": "stable",
+      "associated_symptoms": [
+        "pain"
+      ],
+      "patient_reported_severity": "low",
+      "risk_factors": [],
+      "text_completeness": 0.8
+    },
+    "fusion_output": {
+      "vision_score": 2.0,
+      "text_score": 1.5,
+      "total_risk_score": 3.5,
+      "urgency": "low",
+      "conflict": {
+        "conflict_detected": false,
+        "conflict_type": null,
+        "text_severity": "low",
+        "vision_severity": "low",
+        "visual_dominates": false
+      },
+      "risk_signals": [],
+      "body_region": "skin",
+      "no_image_mode": false
+    },
+    "quality_output": {
+      "quality_score": 0.9,
+      "quality_level": "high",
+      "show_uncertain_badge": false
+    }
+  },
+  "diagnosis": {
+    "possible_conditions": [
+      "Superficial thermal burn",
+      "Irritant contact reaction",
+      "Localized blistering"
+    ],
+    "confidence_levels": [
+      "High",
+      "Low",
+      "Low"
+    ],
+    "clinical_reasoning": [
+      "Visual evidence is consistent with a localized superficial blister.",
+      "Symptom report indicates mild severity and short duration.",
+      "Combined risk scoring remains low without spread or alarming signs."
+    ],
+    "red_flags": [],
+    "recommendation": "Monitor the burn and seek care if pain worsens or blistering spreads.",
+    "disclaimer": "Not a diagnosis. Always consult a licensed medical professional."
+  },
+  "urgency": "low",
+  "conflict": {
+    "conflict_detected": false,
+    "conflict_type": null,
+    "text_severity": "low",
+    "vision_severity": "low",
+    "visual_dominates": false
+  },
+  "risk_signals": [],
+  "quality": {
+    "quality_score": 0.9,
+    "quality_level": "high",
+    "show_uncertain_badge": false
+  },
+  "no_image_mode": false,
+  "demo_mode": true
+}
