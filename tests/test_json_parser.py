@@ -30,6 +30,33 @@ def test_normalize_diagnosis_confidence_and_disclaimer():
     assert "Not a diagnosis" in data["disclaimer"]
 
 
+def test_normalize_diagnosis_handles_common_model_variants():
+    data = normalize_diagnosis_output(
+        {
+            "conditions": [
+                {"name": "Cellulitis", "confidence": "probable"},
+                {"condition": "Contact dermatitis", "confidence": "unlikely"},
+            ],
+            "clinical_reasoning": (
+                "Visual findings suggest higher severity. "
+                "The reported symptom pattern is localized. "
+                "The mismatch supports prompt review."
+            ),
+            "red_flags": "Rapid spreading; fever; worsening pain",
+            "recommendation": "Seek prompt medical evaluation.",
+        }
+    )
+
+    assert data["possible_conditions"] == ["Cellulitis", "Contact dermatitis"]
+    assert data["confidence_levels"] == ["High", "Low"]
+    assert data["clinical_reasoning"] == [
+        "Visual findings suggest higher severity.",
+        "The reported symptom pattern is localized.",
+        "The mismatch supports prompt review.",
+    ]
+    assert data["red_flags"] == ["Rapid spreading", "fever", "worsening pain"]
+
+
 def test_fallback_diagnosis_shape():
     data = fallback_diagnosis()
     assert "possible_conditions" in data

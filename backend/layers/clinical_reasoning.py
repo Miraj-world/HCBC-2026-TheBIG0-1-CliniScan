@@ -31,9 +31,10 @@ Rules:
 
 
 async def generate_clinical_reasoning(fusion_output: dict, quality_output: dict, provider: str, api_key: str) -> dict:
-    prompt = DIAGNOSIS_PROMPT.format(
-        fusion_json=json.dumps(fusion_output, indent=2),
-        quality_level=quality_output.get("quality_level", "medium"),
+    prompt = (
+        DIAGNOSIS_PROMPT
+        .replace("{fusion_json}", json.dumps(fusion_output, indent=2))
+        .replace("{quality_level}", str(quality_output.get("quality_level", "medium")))
     )
 
     raw = await call_ai(
