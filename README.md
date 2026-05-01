@@ -1,6 +1,6 @@
 # CliniScan
 
-CliniScan is a layered multimodal triage support app for hackathon/demo use. It combines symptom text, structured intake fields, and optional image analysis to generate urgency guidance and a structured report.
+CliniScan is a layered multimodal triage support app for hackathon/demo use. It combines typed or voice-captured symptom text, structured intake fields, optional image analysis, and similar-case retrieval to generate urgency guidance and a structured report.
 
 ## Safety
 
@@ -11,6 +11,7 @@ CliniScan is **not** a diagnosis tool and not a replacement for licensed care.
 ## Current Features
 
 - Structured intake: symptom text, body location, duration, pain severity (1-10), age, known conditions, medications.
+- Voice-enabled symptom entry: users can type symptoms manually or record audio in the browser. The backend transcribes audio with OpenAI Whisper and optionally formats the transcript into concise clinical language with Claude before filling the symptom field.
 - Optional image upload (`jpg/png/webp`) for visual evidence extraction.
 - Layered backend pipeline:
   - safety override
@@ -34,7 +35,10 @@ CliniScan is **not** a diagnosis tool and not a replacement for licensed care.
 
 - Frontend: React + Vite
 - Backend: FastAPI
-- AI providers: OpenAI + Anthropic (provider selected in backend request; current frontend sends `openai`)
+- AI providers: OpenAI + Anthropic
+- Audio transcription: OpenAI Whisper (`whisper-1`)
+- Clinical note formatting: Claude Sonnet, when `ANTHROPIC_API_KEY` is configured
+- Similar-case retrieval: PostgreSQL + pgvector
 
 ## Repository Layout
 
@@ -59,6 +63,17 @@ CliniScan/
 ## Setup
 
 ### 1) Backend
+
+macOS/Linux:
+
+```bash
+cd backend
+python3 -m venv ../.venv
+../.venv/bin/python -m pip install -r requirements.txt
+cp .env.example .env
+```
+
+Windows PowerShell:
 
 ```bash
 cd backend
@@ -94,6 +109,15 @@ uvicorn main:app --reload
 
 Run backend:
 
+macOS/Linux:
+
+```bash
+cd backend
+../.venv/bin/python -m uvicorn main:app --reload --port 8000
+```
+
+Windows PowerShell:
+
 ```bash
 cd backend
 ..\.venv\Scripts\python -m uvicorn main:app --reload --port 8000
@@ -114,10 +138,25 @@ Default URLs:
 
 If needed, override frontend API URL:
 
+macOS/Linux:
+
+```bash
+VITE_API_URL=http://localhost:8000 npm run dev
+```
+
+Windows PowerShell:
+
 ```bash
 set VITE_API_URL=http://localhost:8000
 npm run dev
 ```
+
+## Voice Recording Notes
+
+- The symptom field shows a microphone button only when the browser supports `MediaRecorder` and `getUserMedia`.
+- Microphone access must be allowed by the browser and operating system. If the in-app browser blocks access, open `http://127.0.0.1:3000/` in Chrome or Safari and allow microphone permission.
+- Voice capture is optional. The textarea remains editable before and after transcription, and failed voice capture does not block normal form submission.
+- `/transcribe` requires `OPENAI_API_KEY`. If `ANTHROPIC_API_KEY` is missing, transcription still works and the raw transcript is returned as the clinical note fallback.
 
 ## API
 
@@ -130,9 +169,38 @@ JSON body:
 - Required: `symptom_text`, `body_location`, `duration_days`, `severity_score`, `provider`
 - Optional: `age`, `known_conditions`, `medications`, `image_base64`, `image_mime`, `demo_scenario`
 
+### `POST /transcribe`
+Multipart form upload:
+
+- Required field: `audio`
+- Supported browser recording formats: `webm` or `wav`
+
+Returns:
+
+```json
+{
+  "raw_transcript": "Patient's original spoken words...",
+  "clinical_note": "Patient reports symptoms in concise clinical language..."
+}
+```
+
+Failure behavior:
+
+- `400` if `OPENAI_API_KEY` is not configured or the audio upload is empty.
+- `422` if no speech is detected.
+- `502` if Whisper transcription is unavailable.
+
 ## Verification
 
 Run tests:
+
+macOS/Linux:
+
+```bash
+.venv/bin/python -m pytest -q
+```
+
+Windows PowerShell:
 
 ```bash
 python -m pytest -q

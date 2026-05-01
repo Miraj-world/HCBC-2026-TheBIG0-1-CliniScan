@@ -217,11 +217,6 @@ async def analyze(req: AnalyzeRequest):
     if ";base64," in image_data:
         image_data = image_data.split(";base64,")[1]
 
-    # Strip data URI prefix if present (e.g., "data:image/jpeg;base64,")
-    image_data = req.image_base64 or ""
-    if ";base64," in image_data:
-        image_data = image_data.split(";base64,")[1]
-
     vision_output: dict = {}
     no_image_mode = not bool(image_data)
     no_image_reason = "no_image_provided" if no_image_mode else None
