@@ -31,20 +31,37 @@ export default function App() {
   const [currentStage, setCurrentStage] = useState(0);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
+  const [backendStatus, setBackendStatus] = useState("checking");
 
   const timerRef = useRef(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2500);
+
+    fetch(`${API_URL}/health`, { signal: controller.signal })
+      .then((response) => {
+        setBackendStatus(response.ok ? "connected" : "unavailable");
+      })
+      .catch(() => {
+        setBackendStatus("unavailable");
+      })
+      .finally(() => {
+        clearTimeout(timeoutId);
+      });
+
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
+      controller.abort();
+      clearTimeout(timeoutId);
     };
   }, []);
 
   const status = useMemo(() => ({ apiUrl: API_URL }), []);
 
-async function callAnalyze(payload) {
+  async function callAnalyze(payload) {
     let res;
     try {
       res = await fetch(`${API_URL}/analyze`, {
@@ -157,9 +174,20 @@ async function callAnalyze(payload) {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <h1>CliniScan</h1>
-        <p>Layered multimodal triage workflow</p>
-        <span className="api-status">Backend: {status.apiUrl}</span>
+        <div className="topbar-inner">
+          <div className="brand-lockup">
+            <div className="brand-mark" aria-hidden="true">C</div>
+            <div>
+              <h1>CliniScan</h1>
+              <p>Layered multimodal triage workflow.</p>
+            </div>
+          </div>
+          <div className={`api-status status-${backendStatus}`}>
+            <span className="status-dot" aria-hidden="true" />
+            <span>{backendStatus === "connected" ? "Backend connected" : backendStatus === "checking" ? "Checking backend" : "Local backend unavailable"}</span>
+            <small>{status.apiUrl}</small>
+          </div>
+        </div>
       </header>
 
       <main className="page">
