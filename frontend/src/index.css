@@ -1194,6 +1194,11 @@ input[type="range"] {
   color: var(--blue);
 }
 
+.escalation-heading-icon {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
 .result-card-header p {
   max-width: 360px;
   font-size: 0.9rem;

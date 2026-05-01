@@ -24,7 +24,7 @@ async def check_provider(provider: str, env_key: str, model: str) -> bool:
             messages=[{"role": "user", "content": "Reply with only the word OK."}],
             provider=provider,
             api_key=api_key,
-            max_tokens=5,
+            max_tokens=30,
         )
     except httpx.HTTPStatusError as exc:
         detail = exc.response.text[:300]

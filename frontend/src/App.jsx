@@ -140,7 +140,7 @@ export default function App() {
         medications: formData.medications || null,
         image_base64,
         image_mime,
-        provider: "anthropic",
+        provider: "openai",
       };
 
       const response = await callAnalyze(payload);

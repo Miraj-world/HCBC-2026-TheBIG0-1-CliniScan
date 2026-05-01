@@ -8,7 +8,7 @@ ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
 ANTHROPIC_MODEL = "claude-sonnet-4-6"
 
 OPENAI_URL = "https://api.openai.com/v1/chat/completions"
-OPENAI_MODEL = "gpt-4o"
+OPENAI_MODEL = "gpt-5.5"
 
 
 async def _call_anthropic(messages: list[dict[str, Any]], api_key: str, max_tokens: int = 1000, system_prompt: str | None = None) -> str:
@@ -65,7 +65,7 @@ async def _call_openai(messages: list[dict[str, Any]], api_key: str, max_tokens:
     body = {
         "model": OPENAI_MODEL,
         "messages": converted_messages,
-        "max_tokens": max_tokens,
+        "max_completion_tokens": max_tokens,
     }
     async with httpx.AsyncClient(timeout=45) as client:
         response = await client.post(OPENAI_URL, headers=headers, json=body)

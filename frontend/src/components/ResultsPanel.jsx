@@ -155,12 +155,14 @@ export default function ResultsPanel({ data, onReset }) {
         {redFlags.length > 0 ? (
           <section className="card result-card red-flags">
             <div className="result-card-header">
-              <div>
-                <span className="eyebrow">Care escalation</span>
-                <h2 className="heading-with-icon">
+              <div className="clinical-summary-heading care-escalation-heading">
+                <span className="summary-heading-icon escalation-heading-icon">
                   <ShieldAlert size={24} strokeWidth={2.3} aria-hidden="true" />
-                  Red flags
-                </h2>
+                </span>
+                <div>
+                  <span className="eyebrow">Care escalation</span>
+                  <h2>Red flags</h2>
+                </div>
               </div>
             </div>
             <ul className="signal-list red-list">
