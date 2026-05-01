@@ -1,14 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Check, ClipboardList, Cpu, FileText } from "lucide-react";
+import logoUrl from "./assets/CliniScanLogo.png";
 import InputForm from "./components/InputForm";
 import PipelineProgress from "./components/PipelineProgress";
 import ResultsPanel from "./components/ResultsPanel";
 
 const STAGES = [
-  "Analyzing image",
-  "Structuring symptoms",
-  "Fusing evidence",
-  "Computing risk level",
-  "Generating reasoning",
+  "Analyzing image...",
+  "Structuring symptoms...",
+  "Fusing evidence...",
+  "Generating clinical reasoning...",
+];
+
+const STEP_ITEMS = [
+  { label: "Assessment", Icon: ClipboardList },
+  { label: "Processing", Icon: Cpu },
+  { label: "Reports", Icon: FileText },
 ];
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -60,6 +67,7 @@ export default function App() {
   }, []);
 
   const status = useMemo(() => ({ apiUrl: API_URL }), []);
+  const activeStep = view === "input" ? 0 : view === "processing" ? 1 : 2;
 
   async function callAnalyze(payload) {
     let res;
@@ -132,7 +140,7 @@ export default function App() {
         medications: formData.medications || null,
         image_base64,
         image_mime,
-        provider: formData.provider,
+        provider: "anthropic",
       };
 
       const response = await callAnalyze(payload);
@@ -153,49 +161,6 @@ export default function App() {
     }
   }
 
-  async function runDemo(provider, scenario) {
-    setError(null);
-    try {
-      await ensureBackendAvailable();
-    } catch (err) {
-      setError(err.message || "Backend is unreachable");
-      setView("input");
-      return;
-    }
-    setView("processing");
-    setCurrentStage(0);
-
-    timerRef.current = setInterval(() => {
-      setCurrentStage((prev) => (prev < STAGES.length - 1 ? prev + 1 : prev));
-    }, 300);
-
-    try {
-      const response = await callAnalyze({
-        symptom_text: "Demo request placeholder text",
-        body_location: "demo",
-        duration_days: 1,
-        severity_score: 1,
-        provider,
-        demo_scenario: scenario,
-      });
-
-      setCurrentStage(STAGES.length - 1);
-      setTimeout(() => {
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-        }
-        setResults(response);
-        setView("results");
-      }, 350);
-    } catch (err) {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-      setError(err.message || "Demo request failed");
-      setView("input");
-    }
-  }
-
   function resetAll() {
     setResults(null);
     setError(null);
@@ -208,8 +173,8 @@ export default function App() {
       <header className="topbar">
         <div className="topbar-inner">
           <div className="brand-lockup">
-            <div className="brand-mark" aria-hidden="true">C</div>
-            <div>
+            <img className="brand-logo" src={logoUrl} alt="CliniScan" />
+            <div className="brand-copy">
               <h1>CliniScan</h1>
               <p>Layered multimodal triage workflow.</p>
             </div>
@@ -222,9 +187,11 @@ export default function App() {
         </div>
       </header>
 
+      <StepIndicator activeStep={activeStep} />
+
       <main className="page">
         {view === "input" && (
-          <InputForm onSubmit={runAnalysis} onDemo={runDemo} error={error} />
+          <InputForm onSubmit={runAnalysis} error={error} />
         )}
 
         {view === "processing" && (
@@ -236,5 +203,29 @@ export default function App() {
         )}
       </main>
     </div>
+  );
+}
+
+function StepIndicator({ activeStep }) {
+  return (
+    <nav className="step-indicator" aria-label="Assessment progress">
+      <div className="step-indicator-inner">
+        {STEP_ITEMS.map(({ label, Icon }, index) => {
+          const isActive = index === activeStep;
+          const isComplete = index < activeStep;
+          return (
+            <div
+              key={label}
+              className={`top-step ${isActive ? "active" : ""} ${isComplete ? "complete" : ""}`}
+            >
+              <span className="top-step-icon" aria-hidden="true">
+                {isComplete ? <Check size={16} strokeWidth={2.6} /> : <Icon size={17} strokeWidth={2.3} />}
+              </span>
+              <span>{label}</span>
+            </div>
+          );
+        })}
+      </div>
+    </nav>
   );
 }

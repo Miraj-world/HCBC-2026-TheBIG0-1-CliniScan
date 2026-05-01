@@ -1,3 +1,4 @@
+import { AlertOctagon, AlertTriangle, ArrowRight, Info, ShieldAlert, Stethoscope } from "lucide-react";
 import ConflictCallout from "./ConflictCallout";
 import DisclaimerBanner from "./DisclaimerBanner";
 import UrgencyBadge from "./UrgencyBadge";
@@ -18,6 +19,49 @@ function ConditionCard({ name, confidence }) {
       </div>
       <span className={`confidence confidence-${confidenceLabel.toLowerCase()}`}>{confidenceLabel}</span>
     </article>
+  );
+}
+
+function classifyRiskSignal(signal) {
+  const text = String(signal).toLowerCase();
+  if (
+    text.includes("bleeding") ||
+    text.includes("severe") ||
+    text.includes("emergency") ||
+    text.includes("high") ||
+    text.includes("red flag")
+  ) {
+    return { level: "critical", width: "92%", Icon: AlertOctagon };
+  }
+
+  if (
+    text.includes("worsening") ||
+    text.includes("spreading") ||
+    text.includes("discharge") ||
+    text.includes("infection") ||
+    text.includes("conflict") ||
+    text.includes("mismatch") ||
+    text.includes("risk")
+  ) {
+    return { level: "warning", width: "74%", Icon: AlertTriangle };
+  }
+
+  return { level: "info", width: "52%", Icon: Info };
+}
+
+function RiskSignalRow({ signal }) {
+  const { level, width, Icon } = classifyRiskSignal(signal);
+
+  return (
+    <li className={`risk-signal-row risk-${level}`}>
+      <div className="risk-signal-name">
+        <Icon size={18} strokeWidth={2.3} aria-hidden="true" />
+        <span>{signal}</span>
+      </div>
+      <div className="risk-signal-bar" aria-hidden="true">
+        <span style={{ width }} />
+      </div>
+    </li>
   );
 }
 
@@ -69,7 +113,10 @@ export default function ResultsPanel({ data, onReset }) {
           <div className="result-card-header">
             <div>
               <span className="eyebrow">Structured summary</span>
-              <h2>Clinical assessment</h2>
+              <h2 className="heading-with-icon">
+                <Stethoscope size={24} strokeWidth={2.3} aria-hidden="true" />
+                Clinical assessment
+              </h2>
             </div>
           </div>
 
@@ -88,19 +135,16 @@ export default function ResultsPanel({ data, onReset }) {
         </section>
 
         {riskSignals.length > 0 ? (
-          <section className="card result-card">
+          <section className="card result-card risk-signals-card">
             <div className="result-card-header">
               <div>
                 <span className="eyebrow">Evidence fusion</span>
                 <h2>Risk signals detected</h2>
               </div>
             </div>
-            <ul className="signal-list">
+            <ul className="risk-signal-list">
               {riskSignals.map((signal, index) => (
-                <li key={`risk-${index}`}>
-                  <span aria-hidden="true" />
-                  <p>{signal}</p>
-                </li>
+                <RiskSignalRow key={`risk-${index}`} signal={signal} />
               ))}
             </ul>
           </section>
@@ -111,7 +155,10 @@ export default function ResultsPanel({ data, onReset }) {
             <div className="result-card-header">
               <div>
                 <span className="eyebrow">Care escalation</span>
-                <h2>Red flags</h2>
+                <h2 className="heading-with-icon">
+                  <ShieldAlert size={24} strokeWidth={2.3} aria-hidden="true" />
+                  Red flags
+                </h2>
               </div>
             </div>
             <ul className="signal-list red-list">
@@ -129,7 +176,10 @@ export default function ResultsPanel({ data, onReset }) {
       <aside className="results-side">
         <section className="next-step-card">
           <span className="eyebrow">Recommended next step</span>
-          <h2>{data.urgency === "high" ? "Seek prompt medical care" : "Plan your next care step"}</h2>
+          <h2 className="heading-with-icon">
+            {data.urgency === "high" ? "Seek prompt medical care" : "Plan your next care step"}
+            <ArrowRight size={24} strokeWidth={2.4} aria-hidden="true" />
+          </h2>
           <p>{diagnosis.recommendation || "Seek medical evaluation if symptoms persist or worsen."}</p>
         </section>
 

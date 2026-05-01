@@ -1,30 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-
-const DEMO_SCENARIOS = [
-  {
-    id: 1,
-    label: "Skin Rash",
-    description: "Spreading rash with mild fever",
-    tone: "medium",
-  },
-  {
-    id: 2,
-    label: "Minor Burn",
-    description: "Small blister on fingertip",
-    tone: "low",
-  },
-  {
-    id: 3,
-    label: "Eye Redness",
-    description: "Red eye with discharge",
-    tone: "high",
-  },
-];
+import { Calendar, Camera, FileImage, MapPin, Thermometer, User } from "lucide-react";
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 
-export default function InputForm({ onSubmit, onDemo, error }) {
+export default function InputForm({ onSubmit, error }) {
   const [formData, setFormData] = useState({
     symptom_text: "",
     body_location: "",
@@ -33,7 +13,6 @@ export default function InputForm({ onSubmit, onDemo, error }) {
     age: "",
     known_conditions: "",
     medications: "",
-    provider: "anthropic",
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
@@ -52,6 +31,8 @@ export default function InputForm({ onSubmit, onDemo, error }) {
 
   const characterCount = formData.symptom_text.trim().length;
   const remainingCharacters = Math.max(10 - characterCount, 0);
+  const severityValue = Number(formData.severity_score);
+  const severityProgress = `${((severityValue - 1) / 9) * 100}%`;
 
   const canSubmit = useMemo(() => {
     return (
@@ -109,15 +90,6 @@ export default function InputForm({ onSubmit, onDemo, error }) {
     }
   }
 
-  async function runDemoScenario(id) {
-    setIsSubmitting(true);
-    try {
-      await onDemo(formData.provider, id);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
   return (
     <div className="intake-layout">
       <section className="card intake-card">
@@ -153,7 +125,10 @@ export default function InputForm({ onSubmit, onDemo, error }) {
           </label>
 
           <label className="field">
-            <span>Body location *</span>
+            <span className="label-with-icon">
+              <MapPin size={17} strokeWidth={2.2} aria-hidden="true" />
+              Body location *
+            </span>
             <input
               value={formData.body_location}
               placeholder="Left forearm, right eye, chest"
@@ -162,7 +137,10 @@ export default function InputForm({ onSubmit, onDemo, error }) {
           </label>
 
           <label className="field">
-            <span>Duration</span>
+            <span className="label-with-icon">
+              <Calendar size={17} strokeWidth={2.2} aria-hidden="true" />
+              Duration
+            </span>
             <div className="input-with-unit">
               <input
                 type="number"
@@ -177,17 +155,24 @@ export default function InputForm({ onSubmit, onDemo, error }) {
 
           <div className="field span-2 severity-field">
             <div className="field-row">
-              <span>Severity score</span>
-              <strong>{formData.severity_score} / 10</strong>
+              <span className="label-with-icon">
+                <Thermometer size={17} strokeWidth={2.2} aria-hidden="true" />
+                Severity score
+              </span>
+              <strong>{severityValue} / 10</strong>
             </div>
-            <input
-              aria-label="Severity score"
-              type="range"
-              min={1}
-              max={10}
-              value={formData.severity_score}
-              onChange={(event) => setField("severity_score", event.target.value)}
-            />
+            <div className="severity-slider-wrap" style={{ "--severity-progress": severityProgress }}>
+              <span className="severity-value-pill">{severityValue}</span>
+              <input
+                className="severity-slider"
+                aria-label="Severity score"
+                type="range"
+                min={1}
+                max={10}
+                value={formData.severity_score}
+                onChange={(event) => setField("severity_score", event.target.value)}
+              />
+            </div>
             <div className="range-labels" aria-hidden="true">
               <span>Mild</span>
               <span>Moderate</span>
@@ -196,7 +181,10 @@ export default function InputForm({ onSubmit, onDemo, error }) {
           </div>
 
           <label className="field">
-            <span>Age</span>
+            <span className="label-with-icon">
+              <User size={17} strokeWidth={2.2} aria-hidden="true" />
+              Age
+            </span>
             <input
               type="number"
               min={0}
@@ -223,19 +211,14 @@ export default function InputForm({ onSubmit, onDemo, error }) {
               placeholder="Ibuprofen, antibiotics, daily medications"
             />
           </label>
-
-          <label className="field span-2">
-            <span>AI provider</span>
-            <select value={formData.provider} onChange={(event) => setField("provider", event.target.value)}>
-              <option value="anthropic">Anthropic Claude</option>
-              <option value="openai">OpenAI GPT-4o</option>
-            </select>
-          </label>
         </div>
 
         <div className="upload-section">
           <div className="section-subhead">
-            <h3>Image upload</h3>
+            <h3 className="upload-heading">
+              <Camera size={18} strokeWidth={2.4} aria-hidden="true" />
+              Image upload
+            </h3>
             <p>Optional. A clear image can help the system compare visual evidence with the symptom description.</p>
           </div>
 
@@ -272,7 +255,9 @@ export default function InputForm({ onSubmit, onDemo, error }) {
               </div>
             ) : (
               <button type="button" className="upload-prompt" onClick={() => fileInputRef.current?.click()}>
-                <span className="upload-icon" aria-hidden="true" />
+                <span className="upload-icon" aria-hidden="true">
+                  <FileImage size={22} strokeWidth={2.2} />
+                </span>
                 <strong>Drop an image here or browse</strong>
                 <small>JPG, PNG, or WEBP. Max 10 MB.</small>
               </button>
@@ -281,26 +266,6 @@ export default function InputForm({ onSubmit, onDemo, error }) {
 
           {imageError ? <p className="field-error">{imageError}</p> : null}
           {!imagePreview ? <p className="note">No image selected. Text-only triage is supported.</p> : null}
-        </div>
-
-        <div className="demo-section">
-          <div className="section-subhead">
-            <h3>Demo scenarios</h3>
-            <p>Use cached results for a fast presentation flow without live API calls.</p>
-          </div>
-          <div className="demo-grid">
-            {DEMO_SCENARIOS.map((demoScenario) => (
-              <button
-                key={demoScenario.id}
-                className={`demo-card demo-${demoScenario.tone}`}
-                onClick={() => runDemoScenario(demoScenario.id)}
-                disabled={isSubmitting}
-              >
-                <span>{demoScenario.label}</span>
-                <small>{demoScenario.description}</small>
-              </button>
-            ))}
-          </div>
         </div>
 
         <div className="form-actions">
