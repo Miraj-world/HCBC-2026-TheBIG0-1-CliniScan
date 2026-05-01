@@ -1,88 +1,238 @@
-# CliniScan v2
+# CliniScan
 
-CliniScan is a rule-augmented multimodal triage assistant that fuses structured symptom intake and visual evidence.
+CliniScan is a layered multimodal triage workflow for symptom intake and risk assessment. It combines patient-reported symptoms, optional image input, body location, duration, severity, age, medications, known conditions, and a selected AI provider to return a structured triage summary.
 
-## What It Is
-- A layered triage prioritization workflow with deterministic risk fusion.
-- Explainable pipeline output for demo and educational use.
+The product is designed for hackathon demo use as a clinical decision-support prototype. It is not a medical device and it does not diagnose users.
 
-## What It Is Not
-- Not a diagnosis tool.
-- Not a replacement for licensed medical consultation.
-- Not a clinically validated medical device.
+## Safety Disclaimer
 
-Every result includes: `Not a diagnosis. Always consult a licensed medical professional.`
+Every user-facing result must preserve this message:
+
+> Not a medical diagnosis. Always consult a licensed medical professional.
+
+CliniScan should describe results as possible conditions, risk signals, red flags, urgency level, clinical assessment, and recommended next step. Avoid language that implies a confirmed diagnosis.
+
+## Current Capabilities
+
+- Structured symptom intake with body location, duration, severity, age, known conditions, and medications.
+- Optional image upload for visual evidence extraction.
+- Provider selection between Anthropic and OpenAI.
+- Deterministic evidence fusion that combines text and visual signals into a risk score.
+- Conflict detection when patient-reported severity and image-based severity disagree.
+- Safety override and red flag detection for urgent symptoms.
+- Quality gate for uncertain or limited inputs.
+- JSON-only clinical reasoning layer with safe fallback behavior.
+- Demo scenarios for presentation without live API calls.
+- Polished React/Vite frontend with intake, processing, and results dashboard views.
 
 ## Architecture
-- `backend/`
-  - FastAPI orchestration (`/analyze`, `/health`)
-  - Layered modules:
-    - Layer 0: Safety override
-    - Layer 1A: Vision extractor (LLM)
-    - Layer 1B: Symptom structurer (LLM)
-    - Layer 2: Evidence fusion (deterministic)
-    - Layer 3: Quality gate (deterministic)
-    - Layer 4: Clinical reasoning (LLM)
-  - Demo cache scenarios in `backend/cache/`
-- `frontend/`
-  - React + Vite SPA with 3-view state machine:
-    - Input
-    - Processing pipeline
-    - Results
 
-## API Contract
-`POST /analyze` expects JSON:
-- `symptom_text`, `body_location`, `duration_days`, `severity_score`
-- optional: `age`, `known_conditions`, `medications`
-- optional image: `image_base64`, `image_mime`
-- optional demo: `demo_scenario` (`1|2|3`)
-- `provider`: `anthropic` or `openai`
+```text
+CliniScan/
+  backend/
+    main.py                    FastAPI app with /health and /analyze
+    check_api_keys.py          Local API key smoke test
+    cache/                     Demo scenario responses
+    layers/
+      ai_gateway.py            Anthropic/OpenAI API adapters
+      safety_override.py       Deterministic urgent keyword checks
+      vision_extractor.py      Image-to-structured-vision layer
+      symptom_structurer.py    Text-to-structured-symptom layer
+      evidence_fusion.py       Deterministic risk scoring and mismatch detection
+      quality_gate.py          Input quality scoring
+      clinical_reasoning.py    Final structured reasoning prompt
+      json_parser.py           JSON parsing, normalization, and fallback handling
+    models/
+      schemas.py               Pydantic request/response contracts
+  frontend/
+    src/
+      App.jsx                  App shell and API orchestration
+      components/              Intake, progress, result, alert, and badge components
+      index.css                UI design system and responsive styling
+```
 
-Returns:
-- `pipeline_stages`, `diagnosis`, `urgency`, `conflict`, `risk_signals`, `quality`, `no_image_mode`, `demo_mode`
+## Backend Pipeline
+
+1. Safety override scans symptom text for urgent keywords.
+2. Symptom structurer converts text fields into a structured symptom object.
+3. Vision extractor converts an uploaded image into structured visual evidence when an image is provided.
+4. Evidence fusion computes text score, vision score, total risk score, urgency, risk signals, and conflict status.
+5. Quality gate evaluates whether the input is strong enough for confident triage support.
+6. Clinical reasoning receives only structured evidence and returns possible conditions, confidence levels, assessment text, red flags, recommendation, and disclaimer.
+7. JSON parser validates and normalizes model output; invalid model output falls back safely.
+
+## AI Providers And Models
+
+The API keys only authenticate with each provider. The model names are selected in code:
+
+- Anthropic: `claude-sonnet-4-6`
+- OpenAI: `gpt-4o`
+
+Current model constants live in `backend/layers/ai_gateway.py`.
+
+## API Endpoints
+
+### `GET /health`
+
+Returns backend status, provider configuration status, and selected model names.
+
+### `POST /analyze`
+
+Required JSON fields:
+
+- `symptom_text`
+- `body_location`
+- `duration_days`
+- `severity_score`
+- `provider`
+
+Optional fields:
+
+- `age`
+- `known_conditions`
+- `medications`
+- `image_base64`
+- `image_mime`
+- `demo_scenario`
+
+`provider` must be either `anthropic` or `openai`.
+
+`demo_scenario` can be `1`, `2`, or `3`.
 
 ## Local Setup
 
 ### Prerequisites
+
 - Python 3.10+
 - Node.js 18+
-- API keys: Create a `.env` file in `backend/` with:
-  ```
-  ANTHROPIC_API_KEY=your_anthropic_key
-  OPENAI_API_KEY=your_openai_key
-  ```
+- Anthropic and/or OpenAI API key
 
-### Backend
+### 1. Backend Environment
+
+From the repo root:
+
 ```bash
-# From the CliniScan root directory
 cd backend
-pip install -r requirements.txt
-copy .env.example .env    # Then edit .env with your API keys
-python -m uvicorn main:app --reload --port 8000
+cp .env.example .env
 ```
 
-### Frontend
+Edit `backend/.env`:
+
 ```bash
-# From the CliniScan root directory (separate terminal)
+ANTHROPIC_API_KEY=your_anthropic_key
+OPENAI_API_KEY=your_openai_key
+```
+
+Install backend dependencies:
+
+```bash
+cd backend
+python3 -m venv ../.venv
+../.venv/bin/python -m pip install -r requirements.txt
+```
+
+Optional API key smoke test:
+
+```bash
+cd backend
+../.venv/bin/python check_api_keys.py
+```
+
+Start the backend:
+
+```bash
+cd backend
+../.venv/bin/python -m uvicorn main:app --reload --port 8000
+```
+
+Backend URL:
+
+```text
+http://localhost:8000
+```
+
+### 2. Frontend Environment
+
+In a separate terminal, from the repo root:
+
+```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-### Running the Application
+Frontend URL:
 
-1. **Start Backend** (Terminal 1):
-   ```bash
-   cd backend
-   python -m uvicorn main:app --reload --port 8000
-   ```
-   Backend runs at: `http://localhost:8000`
+```text
+http://localhost:3000
+```
 
-2. **Start Frontend** (Terminal 2):
-   ```bash
-   cd frontend
-   npm run dev
-   ```
-   Frontend typically runs at: `http://localhost:3000` (or next available port)
+If the backend is running on a different port:
 
-3. Open the frontend URL in your browser
+```bash
+cd frontend
+VITE_API_URL=http://localhost:8001 npm run dev -- --port 3002
+```
+
+## Demo Scenarios
+
+The frontend includes three cached demo scenarios:
+
+- Skin Rash
+- Minor Burn
+- Eye Redness
+
+Demo scenarios call the backend with `demo_scenario` and return cached responses from `backend/cache/`. They are useful for presentations because they do not require live model calls.
+
+## Verification
+
+Run backend tests from the repo root:
+
+```bash
+.venv/bin/python -m pytest
+```
+
+Run the frontend production build:
+
+```bash
+cd frontend
+npm run build
+```
+
+Expected current verification:
+
+```text
+19 backend tests passing
+frontend Vite build passing
+```
+
+## Known Limitations
+
+- CliniScan is a hackathon prototype, not a clinically validated medical device.
+- It does not store user history or provide authentication.
+- Uploaded images are sent as base64 request payloads to the backend.
+- Live analysis requires configured provider API keys.
+- Model output is constrained and validated, but the system still requires clinician review.
+
+## Team Workflow
+
+Recommended debugging flow:
+
+```bash
+git checkout main
+git pull origin main
+```
+
+Create a branch for new work:
+
+```bash
+git checkout -b your-branch-name
+```
+
+Before pushing:
+
+```bash
+.venv/bin/python -m pytest
+cd frontend
+npm run build
+```
